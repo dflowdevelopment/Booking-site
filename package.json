@@ -1,0 +1,19 @@
+{
+  "name": "webflow-projects",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "parcel app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dflowdevelopment/Booking-site.git"
+  },
+  "dependencies": {
+    "parcel": "^2.13.3"
+  }
+}
