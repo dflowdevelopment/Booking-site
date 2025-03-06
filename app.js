@@ -1,5 +1,7 @@
 "use strict";
 
+document.addEventListener('DOMContentLoaded', function(){
+
 
 // Google Calendar API Key and Calendar ID
 const apiKey = "AIzaSyDvLcy32jJgxuQhr3snDrcsW_KeHRYKBSY";
@@ -104,7 +106,6 @@ document.querySelector("#subBtn").addEventListener("click", function (event) {
     // Prikupljanje podataka iz forme
     const formData = new FormData(form);
     const data = new URLSearchParams();
-
     formData.forEach((value, key) => {
         data.append(key, value); // Dodavanje svakog inputa kao ključ-vrednost par
     });
@@ -118,11 +119,11 @@ document.querySelector("#subBtn").addEventListener("click", function (event) {
             // Ako je uspešno poslato, prikazuje success poruku
             successMessage.style.display = "block";
             form.style.display = "none"; // Sakrij formu
-
+            
             // Ponovno učitavanje stranice nakon 5 sekundi
-            setTimeout(function () {
-                location.reload();
-            }, 5000);
+            // setTimeout(function () {
+            //     location.reload();
+            // }, 5000);
         } else {
             alert("Oops! Something went wrong while submitting the form.");
         }
@@ -136,3 +137,6 @@ document.querySelector("#subBtn").addEventListener("click", function (event) {
 
 // Poziv funkcije za prikazivanje zauzetih datuma (ako je potrebno)
 fetchUnavailableDates();
+
+
+});
