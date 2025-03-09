@@ -3,9 +3,11 @@
 // Uvoz flatpickr-a
 
 
-import flatpickr from "https://cdn.jsdelivr.net/npm/flatpickr/dist/esm/index.min.js";
-import "https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css";
+// Замените овај део:
+import flatpickr from "flatpickr";
 
+// Са овим:
+import flatpickr from "https://cdn.jsdelivr.net/npm/flatpickr/dist/esm/index.min.js";
 document.addEventListener('DOMContentLoaded', function(){
 
 
