@@ -596,111 +596,188 @@ function hmrAccept(bundle /*: ParcelRequire */ , id /*: string */ ) {
 }
 
 },{}],"igcvL":[function(require,module,exports,__globalThis) {
-// app.js
-// 1. UVOZ FLATPICKR-A (ES6 модул)
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+// Uvoz flatpickr-a
 var _flatpickr = require("flatpickr");
 var _flatpickrDefault = parcelHelpers.interopDefault(_flatpickr);
 var _flatpickrMinCss = require("flatpickr/dist/flatpickr.min.css");
-// 2. GOOGLE CALENDAR SETUP
-const API_KEY = "AIzaSyDvLcy32jJgxuQhr3snDrcsW_KeHRYKBSY"; // Замените овај кључ!
-const CALENDAR_ID = "djordjemarkovic96@gmail.com";
-// 3. GLAVNE FUNKCIJE
-async function getBookedDates() {
-    try {
-        const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${CALENDAR_ID}/events?key=${API_KEY}&singleEvents=true&orderBy=startTime`);
+"use strict";
+document.addEventListener('DOMContentLoaded', function() {
+    // Google Calendar API Key and Calendar ID
+    const apiKey = "AIzaSyDvLcy32jJgxuQhr3snDrcsW_KeHRYKBSY";
+    const calendarId = "djordjemarkovic96@gmail.com";
+    // Funkcija za dobijanje zauzetih datuma sa Google kalendara
+    async function getBookedDates() {
+        const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?key=${apiKey}&singleEvents=true&orderBy=startTime`);
         const data = await response.json();
-        return data.items.map((event)=>{
-            const start = new Date(event.start.dateTime || event.start.date);
-            const end = new Date(event.end.dateTime || event.end.date);
-            // Корекција за временску зону
+        // Pretvaranje Google kalendar datuma u lokalnu vremensku zonu (GMT+01:00)
+        const bookedDates = data.items.map((event)=>{
+            const startDate = new Date(event.start.dateTime || event.start.date);
+            const endDate = new Date(event.end.dateTime || event.end.date);
+            // Pretvaramo datume u lokalnu vremensku zonu
+            const localStartDate = new Date(startDate.toLocaleDateString('en-US', {
+                timeZone: 'Europe/Belgrade'
+            }));
+            const localEndDate = new Date(endDate.toLocaleDateString('en-US', {
+                timeZone: 'Europe/Belgrade'
+            }));
             return {
-                start: new Date(start.getTime() + 3600000),
-                end: new Date(end.getTime() + 3600000)
+                startDate: localStartDate,
+                endDate: localEndDate
             };
         });
-    } catch (error) {
-        console.error("Google Calendar Error:", error);
-        return [];
+        return bookedDates;
     }
-}
-// 4. FLATPICKR INIT
-async function initDatePickers() {
-    const bookedDates = await getBookedDates();
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    // Arrival Date Picker
-    const arrivalPicker = (0, _flatpickrDefault.default)("#arrivalDate", {
-        minDate: tomorrow,
-        dateFormat: "Y-m-d",
-        disable: bookedDates.map((date)=>({
-                from: date.start,
-                to: date.end
-            })),
-        onChange: (selectedDates)=>{
-            departurePicker.set("minDate", selectedDates[0]);
-        }
-    });
-    // Departure Date Picker
-    const departurePicker = (0, _flatpickrDefault.default)("#departureDate", {
-        minDate: tomorrow,
-        dateFormat: "Y-m-d",
-        disable: bookedDates.map((date)=>({
-                from: date.start,
-                to: date.end
-            }))
-    });
-}
-// 5. FORM SUBMIT HANDLER
-function handleFormSubmit(e) {
-    e.preventDefault();
-    const form = e.target;
-    const submitBtn = form.querySelector("#subBtn");
-    // Валидација
-    const isValid = [
-        ...form.elements
-    ].every((input)=>{
-        if (input.required && !input.value.trim()) {
-            input.classList.add("field-error");
-            return false;
-        }
-        input.classList.remove("field-error");
-        return true;
-    });
-    if (!isValid) {
-        alert("Popunite sva obavezna polja!");
-        return;
+    // Funkcija za inicijalizaciju Flatpickr-a sa blokiranim datumima
+    async function initializeFlatpickr() {
+        // Dohvati zauzete datume sa Google Calendar-a
+        const bookedDates = await getBookedDates();
+        // Dobijanje trenutnog datuma (dan posle danas)
+        const today = new Date();
+        today.setDate(today.getDate() + 1); // Postavljanje na dan nakon današnjeg
+        const todayString = today.toLocaleDateString('en-CA'); // Format za Flatpickr: YYYY-MM-DD
+        // Flatpickr za Arrival Date
+        const arrivalDatePicker = (0, _flatpickrDefault.default)("#arrivalDate", {
+            dateFormat: "Y-m-d",
+            minDate: todayString,
+            clickOpens: true,
+            allowInput: false,
+            disableMobile: true,
+            tapToClose: true,
+            disable: [
+                ...bookedDates.map((date)=>({
+                        from: date.startDate,
+                        to: new Date(date.endDate.getTime() - 1) // Ne blokiraj poslednji dan (end date)
+                    }))
+            ],
+            onChange: function(selectedDates, dateStr, instance) {
+                // Postavljanje minimalnog datuma za Departure Date kada se odabere Arrival Date
+                departureDatePicker.set('minDate', selectedDates[0]);
+            }
+        });
+        // Flatpickr za Departure Date
+        const departureDatePicker = (0, _flatpickrDefault.default)("#departureDate", {
+            dateFormat: "Y-m-d",
+            minDate: todayString,
+            clickOpens: true,
+            allowInput: false,
+            disableMobile: true,
+            tapToClose: true,
+            disable: [
+                ...bookedDates.map((date)=>({
+                        from: new Date(date.startDate),
+                        to: new Date(date.endDate.getTime() - 1) // Ne blokiraj poslednji dan (end date)
+                    }))
+            ]
+        });
     }
-    // Submit логика
-    submitBtn.disabled = true;
-    submitBtn.textContent = "\u0160aljem...";
-    const formData = new URLSearchParams(new FormData(form));
-    fetch("https://hook.eu2.make.com/a2rmxjdhqwrx1jaegrspnk1n2naneict", {
-        method: "POST",
-        body: formData
-    }).then((response)=>{
-        if (response.ok) {
-            document.getElementById("successMessage").style.display = "block";
-            form.style.display = "none";
-            setTimeout(()=>location.reload(), 5000);
+    // Pozivanje funkcije da inicijalizuje Flatpickr
+    initializeFlatpickr();
+    document.querySelector("#subBtn").addEventListener("click", function(event) {
+        event.preventDefault(); // Sprečava podrazumevano ponašanje forme
+        const form = document.getElementById("booking");
+        const successMessage = document.getElementById("successMessage");
+        const submitButton = document.getElementById("subBtn"); // Dugme za slanje
+        // Provera da li su svi obavezni inputi popunjeni
+        const requiredFields = form.querySelectorAll("[required]");
+        let allFieldsFilled = true;
+        let firstInvalidField = null;
+        requiredFields.forEach((field)=>{
+            if (!field.value.trim()) {
+                allFieldsFilled = false;
+                field.classList.add("field-error"); // Dodaj error klasu
+                if (!firstInvalidField) firstInvalidField = field;
+            } else field.classList.remove("field-error"); // Ukloni error klasu
+        });
+        // Ako neka obavezna polja nisu popunjena, prekidamo slanje
+        if (!allFieldsFilled) {
+            alert("Please fill in all required fields.");
+            firstInvalidField?.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+            return;
         }
-    }).catch((error)=>{
-        console.error("Submit Error:", error);
-        alert("Do\u0161lo je do gre\u0161ke!");
-    }).finally(()=>{
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Po\u0161alji";
+        // Onemogućavanje dugmeta dok traje slanje
+        submitButton.disabled = true;
+        submitButton.textContent = "Submitting...";
+        // Kreiranje XMLHttpRequest objekta
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "https://hook.eu2.make.com/a2rmxjdhqwrx1jaegrspnk1n2naneict", true);
+        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        // Prikupljanje podataka iz forme
+        const formData = new FormData(form);
+        const data = new URLSearchParams();
+        formData.forEach((value, key)=>{
+            data.append(key, value);
+        });
+        // Slanje podataka na Make Webhook URL
+        xhr.send(data.toString());
+        // Obrada odgovora sa servera
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                // Ako je uspešno poslato, prikazuje success poruku i sakriva formu
+                form.style.opacity = "0";
+                setTimeout(()=>{
+                    form.style.display = "none";
+                    successMessage.style.display = "block";
+                }, 500);
+                // Vraćanje dugmeta u normalno stanje
+                submitButton.disabled = false;
+                submitButton.textContent = "Submit";
+                // Automatsko zatvaranje success poruke nakon 5 sekundi
+                setTimeout(()=>{
+                    successMessage.style.display = "none";
+                    location.reload();
+                }, 5000);
+            } else {
+                alert("Oops! Something went wrong while submitting the form.");
+                console.error("Error:", xhr.statusText);
+                submitButton.disabled = false;
+                submitButton.textContent = "Submit";
+            }
+        };
+        // Obrada greške pri slanju
+        xhr.onerror = function() {
+            alert("An error occurred while submitting the form. Please try again later.");
+            console.error("Form submission error:", xhr.statusText);
+            submitButton.disabled = false;
+            submitButton.textContent = "Submit";
+        };
     });
-}
-// 6. INIT SVEGA
-document.addEventListener("DOMContentLoaded", ()=>{
-    // Покрени Flatpickr
-    initDatePickers();
-    // Додај submit handler
-    document.getElementById("booking").addEventListener("submit", handleFormSubmit);
 });
 
-},{"flatpickr":"llQu5","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","flatpickr/dist/flatpickr.min.css":"eVN6V"}],"llQu5":[function(require,module,exports,__globalThis) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","flatpickr":"llQu5","flatpickr/dist/flatpickr.min.css":"eVN6V"}],"gkKU3":[function(require,module,exports,__globalThis) {
+exports.interopDefault = function(a) {
+    return a && a.__esModule ? a : {
+        default: a
+    };
+};
+exports.defineInteropFlag = function(a) {
+    Object.defineProperty(a, '__esModule', {
+        value: true
+    });
+};
+exports.exportAll = function(source, dest) {
+    Object.keys(source).forEach(function(key) {
+        if (key === 'default' || key === '__esModule' || Object.prototype.hasOwnProperty.call(dest, key)) return;
+        Object.defineProperty(dest, key, {
+            enumerable: true,
+            get: function() {
+                return source[key];
+            }
+        });
+    });
+    return dest;
+};
+exports.export = function(dest, destName, get) {
+    Object.defineProperty(dest, destName, {
+        enumerable: true,
+        get: get
+    });
+};
+
+},{}],"llQu5":[function(require,module,exports,__globalThis) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _options = require("./types/options");
@@ -2354,37 +2431,7 @@ var defaults = {
     wrap: false
 };
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"gkKU3":[function(require,module,exports,__globalThis) {
-exports.interopDefault = function(a) {
-    return a && a.__esModule ? a : {
-        default: a
-    };
-};
-exports.defineInteropFlag = function(a) {
-    Object.defineProperty(a, '__esModule', {
-        value: true
-    });
-};
-exports.exportAll = function(source, dest) {
-    Object.keys(source).forEach(function(key) {
-        if (key === 'default' || key === '__esModule' || Object.prototype.hasOwnProperty.call(dest, key)) return;
-        Object.defineProperty(dest, key, {
-            enumerable: true,
-            get: function() {
-                return source[key];
-            }
-        });
-    });
-    return dest;
-};
-exports.export = function(dest, destName, get) {
-    Object.defineProperty(dest, destName, {
-        enumerable: true,
-        get: get
-    });
-};
-
-},{}],"fxflw":[function(require,module,exports,__globalThis) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"fxflw":[function(require,module,exports,__globalThis) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "english", ()=>english);
