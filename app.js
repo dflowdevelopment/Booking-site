@@ -1,8 +1,10 @@
 "use strict";
 
 // Uvoz flatpickr-a
-import flatpickr from "flatpickr";
-import "flatpickr/dist/flatpickr.min.css";
+
+
+import flatpickr from "https://cdn.jsdelivr.net/npm/flatpickr/dist/esm/index.min.js";
+import "https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css";
 
 document.addEventListener('DOMContentLoaded', function(){
 
