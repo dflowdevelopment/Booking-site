@@ -1,4 +1,11 @@
 "use strict";
+const flatpickr = require("flatpickr");
+require("flatpickr/dist/flatpickr.min.css"); // Ne zaboravi na stilove
+// Uvozimo flatpickr
+
+// Uvoz flatpickr-a
+import flatpickr from "flatpickr";
+import "flatpickr/dist/flatpickr.min.css";
 
 document.addEventListener('DOMContentLoaded', function(){
 
@@ -44,6 +51,10 @@ async function initializeFlatpickr() {
     const arrivalDatePicker = flatpickr("#arrivalDate", {
         dateFormat: "Y-m-d",
         minDate: todayString, // Sprečava odabir prošlih datuma
+        clickOpens: true,
+        allowInput: false,
+        disableMobile: true,
+        tapToClose: true,
         disable: [
             ...bookedDates.map(date => ({
                 from: date.startDate,
@@ -60,6 +71,10 @@ async function initializeFlatpickr() {
     const departureDatePicker = flatpickr("#departureDate", {
         dateFormat: "Y-m-d",
         minDate: todayString, // Sprečava odabir prošlih datuma
+        clickOpens: true,
+        allowInput: false,
+        disableMobile: true,
+        tapToClose: true,
         disable: [
             ...bookedDates.map(date => ({
                 from: new Date(date.startDate),
@@ -78,27 +93,37 @@ document.querySelector("#subBtn").addEventListener("click", function (event) {
 
     const form = document.getElementById("booking");
     const successMessage = document.getElementById("successMessage");
+    const submitButton = document.getElementById("subBtn"); // Dugme za slanje
 
     // Provera da li su svi obavezni inputi popunjeni
     const requiredFields = form.querySelectorAll("[required]");
     let allFieldsFilled = true;
+    let firstInvalidField = null;
 
     requiredFields.forEach((field) => {
         if (!field.value.trim()) {
             allFieldsFilled = false;
-            field.classList.add("field-error"); // Dodaj error klasu za nepopunjeno polje
+            field.classList.add("field-error"); // Dodaj error klasu
+            if (!firstInvalidField) {
+                firstInvalidField = field;
+            }
         } else {
             field.classList.remove("field-error"); // Ukloni error klasu
         }
     });
 
-    // Ako neka obavezna polja nisu popunjena, prikazuje se poruka i prekida slanje
+    // Ako neka obavezna polja nisu popunjena, prekidamo slanje
     if (!allFieldsFilled) {
         alert("Please fill in all required fields.");
+        firstInvalidField?.scrollIntoView({ behavior: "smooth", block: "center" });
         return;
     }
 
-    // Kreiranje XMLHttpRequest objekta za slanje podataka
+    // Onemogućavanje dugmeta dok traje slanje
+    submitButton.disabled = true;
+    submitButton.textContent = "Submitting...";
+
+    // Kreiranje XMLHttpRequest objekta
     const xhr = new XMLHttpRequest();
     xhr.open("POST", "https://hook.eu2.make.com/a2rmxjdhqwrx1jaegrspnk1n2naneict", true);
     xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -107,7 +132,7 @@ document.querySelector("#subBtn").addEventListener("click", function (event) {
     const formData = new FormData(form);
     const data = new URLSearchParams();
     formData.forEach((value, key) => {
-        data.append(key, value); // Dodavanje svakog inputa kao ključ-vrednost par
+        data.append(key, value);
     });
 
     // Slanje podataka na Make Webhook URL
@@ -116,27 +141,38 @@ document.querySelector("#subBtn").addEventListener("click", function (event) {
     // Obrada odgovora sa servera
     xhr.onload = function () {
         if (xhr.status === 200) {
-            // Ako je uspešno poslato, prikazuje success poruku
-            successMessage.style.display = "block";
-            form.style.display = "none"; // Sakrij formu
-            
-            // Ponovno učitavanje stranice nakon 5 sekundi
-            // setTimeout(function () {
-            //     location.reload();
-            // }, 5000);
+            // Ako je uspešno poslato, prikazuje success poruku i sakriva formu
+            form.style.opacity = "0";
+            setTimeout(() => {
+                form.style.display = "none";
+                successMessage.style.display = "block";
+            }, 500);
+
+            // Vraćanje dugmeta u normalno stanje
+            submitButton.disabled = false;
+            submitButton.textContent = "Submit";
+
+            // Automatsko zatvaranje success poruke nakon 5 sekundi
+            setTimeout(() => {
+                successMessage.style.display = "none";
+                location.reload();
+            }, 5000);
         } else {
             alert("Oops! Something went wrong while submitting the form.");
+            console.error("Error:", xhr.statusText);
+            submitButton.disabled = false;
+            submitButton.textContent = "Submit";
         }
     };
 
     // Obrada greške pri slanju
     xhr.onerror = function () {
-        alert("An error occurred while submitting the form.");
+        alert("An error occurred while submitting the form. Please try again later.");
+        console.error("Form submission error:", xhr.statusText);
+        submitButton.disabled = false;
+        submitButton.textContent = "Submit";
     };
 });
-
-// Poziv funkcije za prikazivanje zauzetih datuma (ako je potrebno)
-fetchUnavailableDates();
 
 
 });
