@@ -1,8 +1,8 @@
 // app.js
 
 // 1. UVOZ FLATPICKR-A (ES6 модул)
-import flatpickr from "flatpickr";
-import "flatpickr/dist/flatpickr.min.css";
+import flatpickr from "https://cdn.jsdelivr.net/npm/flatpickr/dist/esm/index.min.js";
+import "https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css";
 
 // 2. GOOGLE CALENDAR SETUP
 const API_KEY = "AIzaSyDvLcy32jJgxuQhr3snDrcsW_KeHRYKBSY"; // Замените овај кључ!
